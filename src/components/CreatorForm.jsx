@@ -1,62 +1,96 @@
+import { useState } from "react";
 import {
+  FormControl,
+  FormLabel,
+  Input,
+  Checkbox,
   Button,
   Flex,
-  Input,
-  Textarea
+  HStack,
 } from "@chakra-ui/react";
-import { useState } from "react";
 import createThing from "../services/createThing";
+import DatePicker from "react-datepicker";
+
+import "react-datepicker/dist/react-datepicker.css";
 
 const CreatorForm = ({ setIsLoading, handleError, handleSuccess }) => {
-  // UPDATE STATE TO HANDLE YOUR TYPE
+  const [allDay, setAllDay] = useState(false);
+  const [start, setStart] = useState(new Date());
+  const [end, setEnd] = useState(new Date());
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-
-  // UPDATE HANDLE METHODS TO MATCH YOUR STATE
-  const handleTitleChange = (event) => {
-    setTitle(event.target.value);
-  };
-
-  const handleDescriptionChange = (event) => {
-    setDescription(event.target.value);
-  };
+  const [url, setUrl] = useState("");
 
   const handleSubmit = async () => {
     setIsLoading(true);
-    // UPDATE OBJECT TO MATCH YOUR TYPE
     const response = await createThing({
       title,
-      description,
+      startStr: start.toISOString(),
+      endStr: end ? end.toISOString() : null,
+      title,
+      url,
     });
     if (response.error) {
       handleError(response.error);
     } else {
       handleSuccess();
       setTitle("");
-      setDescription("");
+      setUrl("");
+      setEnd(new Date());
+      setStart(new Date());
+      setAllDay(false);
     }
     setIsLoading(false);
   };
 
+  const isSubmitDisabled = !title || !start || !end;
+
   return (
     <Flex flexDirection="column" alignItems="left" mt={2}>
-      {/* ADD YOUR INPUTS HERE */}
-      <Input
-        placeholder="Title"
-        value={title}
-        onChange={handleTitleChange}
-        mb={2}
-      />
-      <Textarea
-        placeholder="Description"
-        value={description}
-        onChange={handleDescriptionChange}
-        mb={4}
-      />
-      <Button
-        onClick={handleSubmit}
-        isDisabled={title.length < 1 || description.length < 1}
-      >
+      <FormControl isRequired>
+        <FormLabel>Title</FormLabel>
+        <Input
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+        />
+      </FormControl>
+      <FormControl>
+        <FormLabel>URL</FormLabel>
+        <Input value={url} onChange={(event) => setUrl(event.target.value)} />
+      </FormControl>
+      <HStack>
+        <FormControl isRequired>
+          <FormLabel>Start</FormLabel>
+          <DatePicker
+            selected={start}
+            onChange={(date) => setStart(date)}
+            showTimeSelect
+            timeFormat="HH:mm"
+            timeIntervals={15}
+            dateFormat="MM/dd/yyyy h:mm aa"
+          />
+        </FormControl>
+        {!allDay && (
+          <FormControl isRequired>
+            <FormLabel>End</FormLabel>
+            <DatePicker
+              selected={end}
+              onChange={(date) => setEnd(date)}
+              showTimeSelect
+              timeFormat="HH:mm"
+              timeIntervals={15}
+              dateFormat="MM/dd/yyyy h:mm aa"
+            />
+          </FormControl>
+        )}
+        <FormControl>
+          <FormLabel>All Day</FormLabel>
+          <Checkbox
+            isChecked={allDay}
+            onChange={(event) => setAllDay(event.target.checked)}
+          />
+        </FormControl>
+      </HStack>
+      <Button onClick={handleSubmit} isDisabled={isSubmitDisabled}>
         Submit
       </Button>
     </Flex>
